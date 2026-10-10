@@ -1,181 +1,198 @@
-# DeepSeekMeter 🐳
+# DeepSeekMeter — English fork
 
-[![Release](https://img.shields.io/github/v/release/pppolf/DeepSeekMeter)](https://github.com/pppolf/DeepSeekMeter/releases)
-[![License](https://img.shields.io/github/license/pppolf/DeepSeekMeter)](LICENSE)
-[![CI](https://github.com/pppolf/DeepSeekMeter/actions/workflows/ci.yml/badge.svg)](https://github.com/pppolf/DeepSeekMeter/actions/workflows/ci.yml)
-![macOS](https://img.shields.io/badge/macOS-14%2B-blue)
-![Windows](https://img.shields.io/badge/Windows-10%201809%2B-blue)
-![Android](https://img.shields.io/badge/Android-8.0%2B-green)
-![iOS](https://img.shields.io/badge/iOS-17%2B-lightgrey)
+A **Windows system-tray app** that shows your DeepSeek account balance and real usage:
+today's and this month's spend, request counts, output and cache-hit tokens, a per-model
+breakdown, and a daily token trend.
 
-[中文版](README.zh-CN.md)
+Sign in with your DeepSeek account — **no API key, no manual configuration, no budget anchor
+to invent**. Click the tray icon, sign in once, and it keeps itself up to date.
 
-DeepSeekMeter is a lightweight, privacy-first account monitor for **macOS, Windows and Android**, with an **iOS source build** in the same repository. It shows your DeepSeek balance, spending, request/token usage and daily trends without sending data to a third party.
+This is a fork of **[CWNU-Open-Source-Community/DeepSeekMeter](https://github.com/CWNU-Open-Source-Community/DeepSeekMeter)**
+(MIT, by Moddy / gaoming), which is a macOS menu-bar app with Windows, iOS and Android ports.
 
-The latest stable release is **[v0.3.1](https://github.com/pppolf/DeepSeekMeter/releases/tag/v0.3.1)**. macOS, Windows and Android release artifacts are built by GitHub Actions from a version tag; iOS is currently source-only while TestFlight/App Store distribution is pending an Apple Developer account.
+---
 
-## Platform status and downloads
+## Why this fork exists
 
-| Platform | Current status | Latest release / run path |
-| :--- | :--- | :--- |
-| macOS | Stable menu bar app | [DeepSeekMeter-0.3.1-macOS.dmg](https://github.com/pppolf/DeepSeekMeter/releases/tag/v0.3.1) |
-| Windows | Stable system-tray app | [DeepSeekMeter-win-x64.zip](https://github.com/pppolf/DeepSeekMeter/releases/tag/v0.3.1) |
-| Android | A4 complete; direct-install APK | [DeepSeekMeter-v0.3.1-android.apk](https://github.com/pppolf/DeepSeekMeter/releases/tag/v0.3.1) |
-| iOS | M1–M5 source implementation complete; distribution not published | Build from [ios/](ios/README.md) |
+Two reasons, one cosmetic and one functional.
 
-## Features
+### 1. English UI
 
-### Shared account features
+Upstream's entire interface is Chinese. The upstream project explicitly forbids changing
+that (`AGENTS.md`, red line 8: *"不改语言基调"*), so an English build cannot be contributed
+back and has to live in a fork. Every user-visible string here has been translated —
+windows, tray menu, tooltips, status messages and error text. Source comments were left in
+Chinese to keep the diff small and reviewable against upstream.
 
-- Balance and wallet currency display
-- Official DeepSeek sign-in embedded in the app, with automatic session-token capture and manual-paste fallback where supported
-- Monthly and today cost, request count, output tokens, cache-hit tokens and per-model breakdown
-- Daily token trend for the current month (output / cache-hit / total)
-- Configurable refresh intervals from 15 seconds to 10 minutes on desktop and foreground mobile screens
-- Local-only account data flow; no analytics SDK, proxy or third-party upload
+### 2. Upstream could not fetch any data (this is the important one)
 
-### Platform capabilities
+When tested in October 2026, the upstream Windows build was **non-functional** — it would
+open the login page, let you sign in, and then sit on *"Waiting for sign-in to complete…"*
+forever without ever showing a number. Two independent causes:
 
-- **macOS**: menu bar balance, popover UI and launch-at-login
-- **Windows**: system-tray balance colors, WebView2 login and current-user launch-at-login
-- **Android**: lifecycle-aware foreground polling, WorkManager best-effort background refresh and low-balance local notifications
-- **iOS**: SwiftUI app, Keychain token storage, foreground/background refresh, low-balance local notification and snapshot-driven WidgetKit balance widget
+**a) DeepSeek's platform API sits behind an AWS WAF.**
+`platform.deepseek.com` answers `202` with an `x-amzn-waf-action` header to any client that
+does not present a browser session. Measured directly: the endpoint returns an *identical*
+202 for a real token, a deliberately invalid token, and no token at all — the response says
+nothing about your credentials. Upstream's `PlatformService` used a bare `HttpClient`, which
+has no cookie jar and no browser TLS fingerprint, so every request was challenged and every
+call failed.
 
-## Screenshots
+**b) The login state is a cookie *and* a token together.**
+Sending only the session cookie returns HTTP 200 with a business-level error saying the token
+is invalid. Upstream only ever read `localStorage.userToken`, and its extraction path did not
+find it — so it never completed a login.
 
-| macOS — logged in | macOS — sign-in prompt | iOS simulator |
-| :---: | :---: | :---: |
-| ![macOS logged in](images/pic-1.png) | ![macOS sign-in prompt](images/pic-2.png) | ![iOS simulator](ios/screenshots/simulator-home-v2.png) |
+**The fix in this fork:** `PlatformService`'s transport is now injectable
+(`IPlatformTransport`), and the WPF app supplies a **persistent offscreen WebView2**
+(`BrowserHost`) that shares the login window's browser profile. Every API request is issued
+as a `fetch()` *inside that page*, so it carries the session cookies, the WAF clearance and a
+real browser fingerprint. The token is read from the page directly. On startup the app
+adopts an existing browser session, so a sign-in survives restarts.
+
+If you are looking for a Windows DeepSeek meter that works today, this is the difference that
+matters — and it is why this fork exists publicly rather than as a private patch.
+
+---
 
 ## Requirements
 
-| Platform | For users | For source builds |
-| :--- | :--- | :--- |
-| macOS | macOS 14 or later, Apple Silicon or Intel | Xcode Command Line Tools; full Xcode is not required for the macOS target |
-| Windows | Windows 10 version 1809 or later / Windows 11; the release ZIP is self-contained | .NET 8 SDK; WebView2 Runtime is usually available, but install it separately or use the manual token fallback if initialization fails |
-| Android | Android 8.0 / API 26 or later; release APK is direct-install and debug-signed | JDK 17 and Android SDK platform 35; the repository Gradle wrapper downloads Gradle 8.14.2 |
-| iOS | No public binary yet | Xcode 16 or later, iOS 17 deployment target; Apple Developer signing is needed for device distribution |
+- **Windows 10 version 1809 or later, or Windows 11**
+- Nothing else at runtime. The release build is self-contained; the .NET runtime is bundled.
 
-## Install and run
+Building from source additionally needs the **.NET 8 SDK**.
 
-### macOS
+## Install
 
-1. Download the latest DeepSeekMeter-<version>-macOS.dmg from the [Releases page](https://github.com/pppolf/DeepSeekMeter/releases).
-2. Open the DMG and drag DeepSeekMeter.app onto the Applications shortcut.
-3. On first launch, right-click the app and choose **Open**. The release is ad-hoc signed, so Gatekeeper asks once. A Developer ID-signed and notarized build is required to remove that warning for general distribution.
-4. Click the whale icon in the menu bar and choose **Log in**.
+1. Download `DeepSeekMeter-win-x64.zip` from the [Releases](../../releases) page.
+2. Extract it somewhere you can write (the app stores its browser profile under
+   `%LOCALAPPDATA%\DeepSeekMeter`).
+3. Run `DeepSeekMeter.exe`. No installer, no admin rights.
 
-### Windows
+The binary is unsigned, so SmartScreen may warn you. There is no code-signing certificate on
+this fork.
 
-1. Download DeepSeekMeter-win-x64.zip from the [Releases page](https://github.com/pppolf/DeepSeekMeter/releases).
-2. Extract it and run DeepSeekMeter.exe; no .NET SDK is needed for the self-contained release.
-3. If the embedded WebView2 login is unavailable, use the built-in **Paste Token** fallback.
+## First run
 
-See the [Windows guide](windows/README.md) for source builds, storage details and troubleshooting.
+1. The tray icon appears — **it is probably hidden in the Windows 11 overflow**, behind the
+   `^` chevron at the right of the taskbar. Drag it onto the taskbar to pin it.
+2. Click the tray icon to open the panel.
+3. Click **Log in**. An embedded browser opens on `platform.deepseek.com`. Sign in there.
+4. The window closes by itself when the session is captured and the panel fills with data.
 
-### Android
+Settings, credentials and the refresh interval live in the panel's own settings section.
 
-1. Download DeepSeekMeter-v0.3.1-android.apk from the [v0.3.1 Release](https://github.com/pppolf/DeepSeekMeter/releases/tag/v0.3.1).
-2. Install it as a sideloaded APK. Android may require allowing installs from the app used to open the file.
-3. The APK is debug-signed for direct installation and is not a Play Store or publisher-identity build.
+**Sign in with email + password inside the embedded browser.** Third-party OAuth (Google,
+Apple) will not work: upstream's design deliberately cancels any navigation to a
+non-`deepseek.com` host and hands it to your system browser, so the OAuth round-trip happens
+outside the app and the app never sees the session.
 
-See the [Android guide](android/README.md) for Gradle, ADB and notification details.
+## What it shows
 
-### iOS
+- **Balance** — total, granted and topped-up, with currency code
+- **Today** — cost, requests, output tokens
+- **This month** — cost, total requests, output tokens, cache-hit tokens
+- **Per model** — request count and cost for each model used
+- **Token trend** — daily chart, switchable between output / cache-hit / total, with today's
+  total and the month's peak day
+- Status pill, last-updated time, tray tooltip with the balance, low-balance alerts, and a
+  configurable refresh interval (15s – 10m)
 
-iOS does not have a public binary yet. Open the Xcode project from [ios/](ios/README.md), select a simulator or a signing team, and run the app. TestFlight/App Store distribution is a future step.
+Token counts use K/M/B units. Costs use the account's own currency.
 
-## Build from source
+## How it works
 
-Run these commands from the repository root:
+```
+WPF UI ── MainViewModel ── PlatformService ── IPlatformTransport
+                                                   │
+                                    WebViewTransport │  (fetch() inside the page)
+                                                   ▼
+                                    BrowserHost — persistent offscreen WebView2
+                                       shares the login window's profile
+                                                   │
+                                                   ▼
+                            platform.deepseek.com (private, undocumented endpoints)
+```
 
-~~~bash
-# macOS
-swift build
-swift build -c release
-bash Scripts/run-tests.sh
-bash Scripts/build-app.sh release
+Requests go to DeepSeek's own private platform endpoints:
 
-# Windows (PowerShell)
+| Endpoint | Returns |
+|---|---|
+| `/auth-api/v0/users/current` | account identity + currency |
+| `/api/v0/users/get_user_summary` | balance and cumulative spend |
+| `/api/v0/usage/by_api_key/amount` | token usage (daily buckets) |
+| `/api/v0/usage/by_api_key/cost` | cost (daily buckets) |
+
+These are **not a public API contract**. They are the same endpoints the platform's own web
+UI calls, and DeepSeek can change or protect them at any time — the WAF described above is
+exactly that happening. If the app stops working after a DeepSeek change, this layer is
+where to look first.
+
+## Diagnostics
+
+Release builds strip `Debug.WriteLine`, which left the app with no way to explain itself, so
+this fork adds a small rolling log:
+
+```
+%LOCALAPPDATA%\DeepSeekMeter\diag.log
+```
+
+It records request URLs and HTTP status codes only — never a token.
+
+## Privacy
+
+- Requests go **only** to `platform.deepseek.com`, from the app's own browser session.
+- No telemetry, no analytics, no proxy, no third-party upload.
+- The session token is stored DPAPI-encrypted, bound to your Windows user account, in
+  `%APPDATA%\DeepSeekMeter\settings.json`.
+- Browser profile and session cookies live in
+  `%LOCALAPPDATA%\DeepSeekMeter\WebView2`. **Sign out** in the panel clears them.
+
+## Known limitations
+
+- **The embedded login page is the live DeepSeek website**, so that one screen stays in
+  whatever language DeepSeek serves.
+- **DeepSeek's own server-side error messages are passed through verbatim** and are not
+  translatable client-side. Client-side text is English.
+- Third-party OAuth sign-in does not work (see *First run*).
+- macOS, iOS and Android parts of the upstream project are untouched and remain Chinese.
+
+## Building from source
+
+```powershell
 dotnet build windows/DeepSeekMeter.sln -c Release
-dotnet run --project windows/src/DeepSeekMeter -c Release
+
+# self-contained x64 release, same as the published ZIP
 pwsh Scripts/publish-windows.ps1
 
-# Android
-cd android
-./gradlew :core:test :app:assembleDebug
-./gradlew :app:assembleRelease
-cd ..
-
-# iOS core and project checks (Xcode is optional for the core checks)
-bash Scripts/run-ios-tests.sh
-# Full simulator build/install/run; requires Xcode and an iOS runtime
-bash Scripts/run-ios-simulator.sh
-~~~
-
-Platform-specific guides: [Windows](windows/README.md), [iOS](ios/README.md) and [Android](android/README.md).
-
-## Quick start
-
-After launching a desktop or mobile build:
-
-1. Open the app and choose **Log in**.
-2. Sign in on the official platform.deepseek.com page with your password or QR code.
-3. Return to the app; the balance and current usage snapshot are loaded automatically.
-4. If the session expires, choose **Log in again**. Sign out clears the locally stored token.
-
-## Privacy and data
-
-- Requests go directly from the app to DeepSeek private platform endpoints: /auth-api/v0/users/current, /api/v0/users/get_user_summary, /api/v0/usage/by_api_key/amount and /api/v0/usage/by_api_key/cost. These endpoints are not a public API contract and platform aggregation may have its own reporting delay.
-- The app does not send tokens, balances, usage data, telemetry or analytics to this repository owner or any other third party.
-- Token storage is platform-specific: macOS UserDefaults at ~/Library/Preferences/com.deepseek.meter.plist, Windows DPAPI-protected settings, iOS Keychain, and Android Keystore-encrypted ciphertext in SharedPreferences.
-- The iOS widget reads only a non-sensitive balance snapshot from the App Group container. Android background work never receives the token as WorkManager input data.
-- Never paste a real token into source code, issue reports, logs or screenshots.
-
-## Repository map
-
-~~~text
-Sources/DeepSeekMeter/       macOS SwiftUI + AppKit menu bar app
-windows/                     .NET 8 + WPF system-tray implementation
-  README.md                  Windows English guide
-  README.zh-CN.md            Windows Chinese guide
-ios/                         iOS SwiftUI app, WidgetKit extension and shared core
-android/                     Android Compose app and zero-AndroidX core module
-Scripts/                     build, packaging, self-test and mobile validation scripts
-MOBILE-PLAN.md               mobile milestones, decisions and boundary rules
-.github/workflows/            CI for macOS/Windows/iOS/Android; tag-based release pipeline
-~~~
-
-## Tests and CI
-
-~~~bash
-# macOS
-bash Scripts/run-tests.sh
-
-# Windows
+# offline smoke test — DPAPI, settings, JSON decoding, aggregation (exit 0 required)
 dotnet run --project windows/tests/DeepSeekMeter.Selftest -c Release
+```
 
-# iOS core, drift and project checks
-bash Scripts/run-ios-tests.sh
+The self-test needs no network and no credentials.
 
-# Android JVM tests and debug app build
-cd android && ./gradlew :core:test :app:assembleDebug
-~~~
+**Do not** add `InvariantGlobalization` or `PublishTrimmed`: `Models.cs` resolves the
+`"China Standard Time"` time zone and trimming breaks it.
 
-Every pull request and main push runs the platform CI jobs. Pushing a v* tag runs the release workflow, which builds the macOS DMG, Windows self-contained ZIP and Android APK, then attaches them to a GitHub Release. iOS simulator artifacts are validated in CI but are not published as a user download.
+## Attribution and licence
 
-## FAQ
+MIT, inherited from upstream. Original work © Moddy / gaoming and the
+[CWNU Open Source Community](https://github.com/CWNU-Open-Source-Community/DeepSeekMeter);
+the original README is preserved as [README.upstream.md](README.upstream.md).
 
-- **The token expired.** Choose **Log in again**. The app re-authenticates through the official page.
-- **The desktop icon is missing.** Check that the process is running, then run the platform install instructions again. macOS apps are menu-bar-only and do not show a Dock icon.
-- **Android notifications do not appear.** Enable notifications for the app in Android system settings; background delivery is best-effort and subject to WorkManager/OS scheduling.
-- **How do I uninstall?** Remove the app and its local data: macOS ~/Library/Preferences/com.deepseek.meter.plist, Windows %APPDATA%/DeepSeekMeter and %LOCALAPPDATA%/DeepSeekMeter, or uninstall/clear Android app storage. iOS data is removed with the app.
-- **Where is iOS TestFlight?** The source implementation is ready, but signing and distribution still require an Apple Developer Program account.
+Modifications in this fork, © 2026 cmathur086:
 
-## Contributing
+1. All user-visible UI text translated to English.
+2. Token display units changed from 亿/万 (10⁸/10⁴) to B/M/K (10⁹/10⁶/10³).
+3. Platform requests rerouted through a browser-context transport (`IPlatformTransport`,
+   `BrowserHost`, `WebViewTransport`) to work against DeepSeek's WAF.
+4. Login accepts the browser session and adopts it on startup.
+5. Added `Diag` logging and version stamping (`0.3.1-en1`).
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first; the Chinese version is [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md). It covers build/test commands, commit conventions and project boundaries. AI coding agents should also follow [AGENTS.md](AGENTS.md).
+The `LICENSE` file is unmodified.
 
-## License
+---
 
-[MIT](LICENSE) © 2026 pppolf
+*Not affiliated with DeepSeek. With thanks to the upstream authors, whose architecture —
+tray app, private-endpoint client, DPAPI storage — is entirely their design; this fork only
+translated it and repaired the transport.*
