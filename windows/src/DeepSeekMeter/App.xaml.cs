@@ -14,6 +14,7 @@ public partial class App : System.Windows.Application
     private SettingsStore? _settings;
     private MainViewModel? _model;
     private TrayIconController? _tray;
+    private BrowserHost? _browserHost;
     private Mutex? _singleInstanceMutex;
     private bool _syncingLaunchAtLogin;
 
@@ -36,7 +37,12 @@ public partial class App : System.Windows.Application
 
         _settings = new SettingsStore();
         _settings.PropertyChanged += OnSettingsPropertyChanged;
-        _model = new MainViewModel(_settings);
+
+        // 常驻浏览器宿主：平台请求必须经它发出。
+        // 裸 HttpClient 没有浏览器会话，会被 platform.deepseek.com 的 AWS WAF 以 202 挑战拦截。
+        _browserHost = new BrowserHost();
+
+        _model = new MainViewModel(_settings, _browserHost);
         _model.OnLoginSucceeded = () => _tray?.ShowPopover();
         _tray = new TrayIconController(_model);
 
@@ -46,6 +52,7 @@ public partial class App : System.Windows.Application
         StartShowSignalListener(); // 监听二次启动信号
 
         _model.StartPolling();
+        _ = _model.AdoptBrowserSessionAsync(); // 已有浏览器登录态则直接接管，无需重新登录
 
         // 启动即弹出悬浮窗（默认置顶），避免藏在托盘后台找不到
         Dispatcher.BeginInvoke(async () =>
@@ -165,6 +172,8 @@ public partial class App : System.Windows.Application
         _model?.StopPolling();
         _tray?.Dispose();
         _tray = null;
+        _browserHost?.Dispose();
+        _browserHost = null;
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();
         _singleInstanceMutex = null;

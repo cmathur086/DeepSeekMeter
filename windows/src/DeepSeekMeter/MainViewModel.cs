@@ -14,7 +14,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 {
     public SettingsStore Settings { get; }
 
-    private readonly PlatformService _service = new();
+    private readonly PlatformService _service;
+    private readonly BrowserHost? _host;
     private DispatcherTimer? _timer;
     private LoginWindow? _loginWindow;
     private int _consecutiveFailures;
@@ -30,9 +31,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isFetching;
     private string _currency = "CNY";
 
-    public MainViewModel(SettingsStore settings)
+    /// <summary>
+    /// host 非空时所有平台请求走浏览器内 fetch（带 Cookie 与 WAF 放行票据）；
+    /// 为空时退回裸 HttpClient（自测与无浏览器场景）。
+    /// </summary>
+    public MainViewModel(SettingsStore settings, BrowserHost? host = null)
     {
         Settings = settings;
+        _host = host;
+        _service = new PlatformService(host?.Transport);
     }
 
     // MARK: - 绑定属性
@@ -318,7 +325,46 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public void ClearPlatformToken()
+    /// <summary>
+    /// 启动时接管已有的浏览器登录态。
+    ///
+    /// 平台登录态在 Cookie 里，settings.json 里没有 token 并不代表没登录。
+    /// BrowserHost 首次导航需要时间，所以带重试；成功则写入占位 Token 让
+    /// 「已登录」状态成立，请求本身依旧靠 Cookie。
+    /// </summary>
+    public async Task AdoptBrowserSessionAsync()
+    {
+        if (_host is null || !string.IsNullOrEmpty(Settings.PlatformToken)) return;
+
+        for (var attempt = 0; attempt < 12; attempt++)
+        {
+            try
+            {
+                // 先取真实 Token（登录态 = Cookie + localStorage.userToken），
+                // 取不到时退回占位值（仅 Cookie），但那个组合会被平台判为无效
+                var token = await _host.ReadUserTokenAsync() ?? PlatformService.BrowserSessionToken;
+                var user = await _service.FetchCurrentUserAsync(token);
+                if (!Settings.TrySetPlatformCredentials(token, user.Email, out _))
+                    return;
+                Currency = user.Currency;
+                PlatformTokenExpired = false;
+                await FetchUsageAsync();
+                await FetchBalanceAsync();
+                _consecutiveFailures = 0;
+                StartPolling();
+                OnPropertyChanged(nameof(Status));
+                return;
+            }
+            catch (PlatformException ex)
+            {
+                // 浏览器还没就绪，或确实没登录：稍后重试
+                Diag.Log($"adopt attempt {attempt + 1}: {ex.Kind} {ex.Message}");
+            }
+            await Task.Delay(1500);
+        }
+    }
+
+    public async Task ClearPlatformTokenAsync()
     {
         // 先清除设置文件中的加密字段（成功才清内存，失败保留一致登录状态）
         if (!Settings.TryClearPlatformCredentials(out var clearError))
@@ -326,8 +372,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
             LastError = "Failed to clear stored sign-in";
             return;
         }
-        // 设置文件清除成功后，再清理 WebView2 网页登录数据
-        var webDataCleared = LoginWindow.ClearWebViewData();
+        // 设置文件清除成功后，再清理 WebView2 网页登录数据。
+        // 常驻 BrowserHost 持有用户数据目录，删目录必然失败，因此优先清 Cookie。
+        var webDataCleared = _host is not null
+            ? await _host.ClearSessionAsync()
+            : LoginWindow.ClearWebViewData();
         MonthUsage = null;
         UsageError = null;
         LastBalance = null;

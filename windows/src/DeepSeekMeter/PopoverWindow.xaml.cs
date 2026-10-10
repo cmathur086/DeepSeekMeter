@@ -478,7 +478,7 @@ public partial class PopoverWindow : Window
 
     private async void OnRefreshClick(object sender, RoutedEventArgs e) => await _model.RefreshAsync();
 
-    private void OnLogoutClick(object sender, RoutedEventArgs e) => _model.ClearPlatformToken();
+    private async void OnLogoutClick(object sender, RoutedEventArgs e) => await _model.ClearPlatformTokenAsync();
 
     private void OnQuitClick(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
 

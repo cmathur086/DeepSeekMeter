@@ -97,6 +97,21 @@ public sealed class PlatformService
         return client;
     }
 
+    /// <summary>
+    /// 浏览器会话占位 Token：平台的登录态已经放到 Cookie，localStorage 里
+    /// 可能根本没有可用 token。该值只用于让「已登录」状态成立，
+    /// 永不作为 Authorization 头发送。
+    /// </summary>
+    public const string BrowserSessionToken = "browser-session";
+
+    private readonly IPlatformTransport? _transport;
+
+    /// <summary>传入 transport 时所有请求走浏览器内 fetch；否则退回裸 HttpClient（自测用）。</summary>
+    public PlatformService(IPlatformTransport? transport = null)
+    {
+        _transport = transport;
+    }
+
     /// <summary>当前用户信息。</summary>
     public readonly record struct UserInfo(string Email, string Currency);
 
@@ -155,45 +170,77 @@ public sealed class PlatformService
 
     // MARK: - 请求
 
-    private static async Task<T> GetAsync<T>(string path, string token, CancellationToken ct = default)
+    private async Task<T> GetAsync<T>(string path, string token, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        // 走浏览器时凭据在 Cookie 里，token 允许为空；走裸 HttpClient 时必须有 token
+        if (_transport is null && string.IsNullOrWhiteSpace(token))
             throw PlatformException.EmptyToken();
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, BaseUrl + path);
-        request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
-        request.Headers.TryAddWithoutValidation("Referer", "https://platform.deepseek.com/usage");
-        request.Headers.TryAddWithoutValidation("Origin", "https://platform.deepseek.com");
+        string json;
 
-        HttpResponseMessage response;
-        try
+        if (_transport is not null)
         {
-            response = await Http.SendAsync(request, ct);
-        }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-        {
-            throw PlatformException.Network("Request timed out");
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-        {
-            throw PlatformException.Network(ex.Message);
-        }
-
-        using (response)
-        {
-            if ((int)response.StatusCode != 200)
-                throw PlatformException.Http((int)response.StatusCode);
-
-            var json = await response.Content.ReadAsStringAsync(ct);
+            // 占位 Token 不能当 Bearer 发出去，否则可能被平台判成非法凭据
+            var bearer = token == BrowserSessionToken ? null : token;
+            PlatformHttpResult result;
             try
             {
-                return JsonSerializer.Deserialize<T>(json, Json.Options)
-                    ?? throw PlatformException.Decoding("Response is empty");
+                result = await _transport.GetAsync(BaseUrl + path, bearer, ct);
             }
-            catch (JsonException ex)
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                throw PlatformException.Decoding(ex.Message);
+                throw PlatformException.Network("Request timed out");
             }
+            catch (PlatformException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw PlatformException.Network(ex.Message);
+            }
+
+            if (result.StatusCode != 200)
+                throw PlatformException.Http(result.StatusCode);
+            json = result.Body;
+        }
+        else
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, BaseUrl + path);
+            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
+            request.Headers.TryAddWithoutValidation("Referer", "https://platform.deepseek.com/usage");
+            request.Headers.TryAddWithoutValidation("Origin", "https://platform.deepseek.com");
+
+            HttpResponseMessage response;
+            try
+            {
+                response = await Http.SendAsync(request, ct);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                throw PlatformException.Network("Request timed out");
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                throw PlatformException.Network(ex.Message);
+            }
+
+            using (response)
+            {
+                if ((int)response.StatusCode != 200)
+                    throw PlatformException.Http((int)response.StatusCode);
+                json = await response.Content.ReadAsStringAsync(ct);
+            }
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, Json.Options)
+                ?? throw PlatformException.Decoding("Response is empty");
+        }
+        catch (JsonException ex)
+        {
+            throw PlatformException.Decoding(ex.Message);
         }
     }
 

@@ -14,17 +14,16 @@ public partial class LoginWindow : Window
 {
     private readonly Action<string, string> _onToken;
     private readonly Action _onCancel;
-    private readonly PlatformService _platformService = new();
+    // 校验走本窗口内的浏览器会话：平台登录态在 Cookie 里，裸 HttpClient 会被 WAF 拦截
+    private readonly PlatformService _platformService;
 
     private DispatcherTimer? _pollTimer;
     private bool _isChecking;
     private bool _tokenReceived;
     private string _lastSignature = "";
 
-    /// <summary>WebView2 用户数据目录（退出登录时清理 Cookie/localStorage）。</summary>
-    public static readonly string UserDataFolder = System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "DeepSeekMeter", "WebView2");
+    /// <summary>WebView2 用户数据目录（与常驻 BrowserHost 共用同一份，见 WebViewEnvironment）。</summary>
+    public static string UserDataFolder => WebViewEnvironment.UserDataFolder;
 
     /// <summary>清除 WebView2 中与 DeepSeek 相关的登录数据。返回是否成功。</summary>
     public static bool ClearWebViewData()
@@ -71,6 +70,7 @@ public partial class LoginWindow : Window
         InitializeComponent();
         _onToken = onToken;
         _onCancel = onCancel;
+        _platformService = new PlatformService(new WebViewTransport(() => WebView.CoreWebView2));
         Loaded += OnLoaded;
         Closed += OnClosed;
     }
@@ -79,8 +79,8 @@ public partial class LoginWindow : Window
     {
         try
         {
-            // 独立用户数据目录：登录态与浏览器互不影响，重启后仍可用
-            var env = await CoreWebView2Environment.CreateAsync(null, UserDataFolder);
+            // 共享环境：与常驻 BrowserHost 用同一份 Cookie（同一目录只能有一个环境实例）
+            var env = await WebViewEnvironment.GetAsync();
             await WebView.EnsureCoreWebView2Async(env);
             WebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             WebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
@@ -207,15 +207,13 @@ public partial class LoginWindow : Window
             }
 
             var signature = StorageSignature(pairs);
-            if (signature == _lastSignature) { SetStatus("Waiting for sign-in to complete…"); return; }
             _lastSignature = signature;
 
-            var candidates = TokenCandidates(pairs);
-            if (candidates.Count == 0) { SetStatus("Waiting for sign-in to complete…"); return; }
-
-            SetStatus("Sign-in detected, verifying…");
-            System.Diagnostics.Debug.WriteLine($"[DeepSeekMeter] login: candidates = {candidates.Count}");
-            await ValidateAsync(candidates);
+            // 不再要求 localStorage 里必须有候选 token：平台登录态已迁到 Cookie。
+            // 每轮都尝试一次浏览器会话校验（未登录时快速失败，下轮再试）。
+            SetStatus("Checking sign-in…");
+            System.Diagnostics.Debug.WriteLine($"[DeepSeekMeter] login: candidates = {TokenCandidates(pairs).Count}");
+            await ValidateAsync(TokenCandidates(pairs));
         }
         catch (Exception ex)
         {
@@ -284,29 +282,42 @@ public partial class LoginWindow : Window
         return result;
     }
 
-    /// <summary>逐个校验候选 Token（对齐 macOS 版 validate）。</summary>
+    /// <summary>
+    /// 校验登录态。先试浏览器会话（Cookie，最可靠），再逐个试 localStorage 候选 Token。
+    /// </summary>
     private async Task ValidateAsync(List<string> candidates)
     {
         if (_tokenReceived) return;
+
+        if (await TryAcceptAsync(PlatformService.BrowserSessionToken)) return;
+
         foreach (var token in candidates)
         {
-            if (_tokenReceived) return;
-            try
-            {
-                var user = await _platformService.FetchCurrentUserAsync(token);
-                _tokenReceived = true;
-                SetStatus("Token acquired ✓");
-                StopPolling();
-                Close();
-                _onToken(token, user.Email);
-                return;
-            }
-            catch (PlatformException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DeepSeekMeter] login: 候选校验失败 - {ex.Message}");
-            }
+            if (await TryAcceptAsync(token)) return;
         }
-        SetStatus("Verification failed - will retry automatically…");
+
+        SetStatus("Not signed in yet - will retry automatically…");
+    }
+
+    /// <summary>用某个凭据请求 /users/current；成功即视为登录完成。</summary>
+    private async Task<bool> TryAcceptAsync(string token)
+    {
+        if (_tokenReceived) return true;
+        try
+        {
+            var user = await _platformService.FetchCurrentUserAsync(token);
+            _tokenReceived = true;
+            SetStatus("Signed in ✓");
+            StopPolling();
+            Close();
+            _onToken(token, user.Email);
+            return true;
+        }
+        catch (PlatformException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[DeepSeekMeter] login: credential rejected - {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>手动粘贴 Token 兜底（WebView2 不可用时仍可登录）。</summary>
