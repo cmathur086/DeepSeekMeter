@@ -57,12 +57,12 @@ public partial class LoginWindow : Window
             }
             catch
             {
-                SetStatus("打开外部链接失败");
+                SetStatus("Failed to open external link");
             }
         }
         else
         {
-            SetStatus("已阻止不安全的链接");
+            SetStatus("Blocked an unsafe link");
         }
     }
 
@@ -113,7 +113,7 @@ public partial class LoginWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus($"WebView2 初始化失败：{ex.Message}（可点右上角「手动粘贴 Token」）");
+            SetStatus($"WebView2 failed to initialize: {ex.Message} (use Paste Token in the top right)");
         }
     }
 
@@ -152,7 +152,7 @@ public partial class LoginWindow : Window
         // 只在验证通过的 DeepSeek HTTPS 页面执行 localStorage Token 扫描，避免在第三方页面读取登录数据
         if (!UrlSafety.IsAllowedDeepSeekUrl(WebView.CoreWebView2.Source))
         {
-            SetStatus("请在官方登录页登录…");
+            SetStatus("Please sign in on the official sign-in page…");
             return;
         }
 
@@ -174,7 +174,7 @@ public partial class LoginWindow : Window
 })()
 """;
             var result = await WebView.CoreWebView2.ExecuteScriptAsync(js);
-            if (string.IsNullOrEmpty(result)) { SetStatus("等待登录完成…"); return; }
+            if (string.IsNullOrEmpty(result)) { SetStatus("Waiting for sign-in to complete…"); return; }
 
             // 关键：WebView2 的 ExecuteScriptAsync 返回的是「JSON 编码后的结果」，
             // 脚本返回字符串时外层是带引号转义的 JSON 字符串字面量（如 "\"{\"ok\":true...}\""），
@@ -186,16 +186,16 @@ public partial class LoginWindow : Window
             }
             catch (JsonException)
             {
-                SetStatus("等待登录完成…");
+                SetStatus("Waiting for sign-in to complete…");
                 return;
             }
 
             using var doc = JsonDocument.Parse(innerJson);
             var root = doc.RootElement;
-            if (!root.TryGetProperty("ok", out var ok) || !ok.GetBoolean()) { SetStatus("等待登录完成…"); return; }
+            if (!root.TryGetProperty("ok", out var ok) || !ok.GetBoolean()) { SetStatus("Waiting for sign-in to complete…"); return; }
             if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
             {
-                SetStatus("尚未就绪，等待登录完成…");
+                SetStatus("Not ready yet - waiting for sign-in…");
                 return;
             }
 
@@ -207,19 +207,19 @@ public partial class LoginWindow : Window
             }
 
             var signature = StorageSignature(pairs);
-            if (signature == _lastSignature) { SetStatus("等待登录完成…"); return; }
+            if (signature == _lastSignature) { SetStatus("Waiting for sign-in to complete…"); return; }
             _lastSignature = signature;
 
             var candidates = TokenCandidates(pairs);
-            if (candidates.Count == 0) { SetStatus("等待登录完成…"); return; }
+            if (candidates.Count == 0) { SetStatus("Waiting for sign-in to complete…"); return; }
 
-            SetStatus("检测到登录信息，校验中…");
+            SetStatus("Sign-in detected, verifying…");
             System.Diagnostics.Debug.WriteLine($"[DeepSeekMeter] login: candidates = {candidates.Count}");
             await ValidateAsync(candidates);
         }
         catch (Exception ex)
         {
-            SetStatus($"页面未就绪（{ex.Message}），等待登录…");
+            SetStatus($"Page not ready ({ex.Message}) - waiting for sign-in…");
         }
         finally
         {
@@ -295,7 +295,7 @@ public partial class LoginWindow : Window
             {
                 var user = await _platformService.FetchCurrentUserAsync(token);
                 _tokenReceived = true;
-                SetStatus("已获取 Token ✓");
+                SetStatus("Token acquired ✓");
                 StopPolling();
                 Close();
                 _onToken(token, user.Email);
@@ -306,7 +306,7 @@ public partial class LoginWindow : Window
                 System.Diagnostics.Debug.WriteLine($"[DeepSeekMeter] login: 候选校验失败 - {ex.Message}");
             }
         }
-        SetStatus("校验未通过，稍后自动重试…");
+        SetStatus("Verification failed - will retry automatically…");
     }
 
     /// <summary>手动粘贴 Token 兜底（WebView2 不可用时仍可登录）。</summary>
@@ -315,7 +315,7 @@ public partial class LoginWindow : Window
         var dialog = new TokenInputDialog(token =>
         {
             if (string.IsNullOrWhiteSpace(token)) return;
-            SetStatus("校验中…");
+            SetStatus("Verifying…");
             _ = ValidateAsync([token.Trim()]);
         });
         dialog.Owner = this;
@@ -334,7 +334,7 @@ public partial class LoginWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus($"打开浏览器失败：{ex.Message}");
+            SetStatus($"Failed to open browser: {ex.Message}");
         }
     }
 }

@@ -13,15 +13,15 @@ public static class TrendMetricText
 {
     public static string Label(this TrendMetric m) => m switch
     {
-        TrendMetric.Output => "输出",
-        TrendMetric.CacheHit => "缓存命中",
-        _ => "总量",
+        TrendMetric.Output => "Output",
+        TrendMetric.CacheHit => "Cache hit",
+        _ => "Total",
     };
 
     public static string Description(this TrendMetric m) => m switch
     {
-        TrendMetric.Output => "模型生成的输出 Token",
-        TrendMetric.CacheHit => "从缓存直接复用的输入 Token",
-        _ => "输出 + 缓存命中 + 缓存未命中 Token",
+        TrendMetric.Output => "Model-generated output tokens",
+        TrendMetric.CacheHit => "Input tokens reused directly from cache",
+        _ => "Output + cache-hit + cache-miss tokens",
     };
 }

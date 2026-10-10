@@ -51,7 +51,7 @@ public static class TokenProtector
             if (!CryptProtectData(ref inBlob, null, ref entropy, IntPtr.Zero, IntPtr.Zero, CryptprotectUiForbidden, ref outBlob))
             {
                 var winErr = Marshal.GetLastWin32Error();
-                throw new InvalidOperationException($"令牌加密失败（错误码 0x{winErr:X8}）");
+                throw new InvalidOperationException($"Token encryption failed (error code 0x{winErr:X8})");
             }
             var result = new byte[outBlob.cbData];
             Marshal.Copy(outBlob.pbData, result, 0, outBlob.cbData);

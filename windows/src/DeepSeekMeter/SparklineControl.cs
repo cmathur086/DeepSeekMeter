@@ -133,7 +133,7 @@ public sealed class SparklineControl : System.Windows.FrameworkElement
 
         _lastHoverIndex = index;
         var entry = entries[index];
-        ToolTip = $"{entry.Date.Month}月{entry.Date.Day}日\n{MetricName}\n{Formatting.TokenFullString(entry.Value)} Token";
+        ToolTip = $"{entry.Date:MMM d}\n{MetricName}\n{Formatting.TokenFullString(entry.Value)} Token";
     }
 
     protected override void OnMouseLeave(MouseEventArgs e)

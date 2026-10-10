@@ -154,14 +154,14 @@
                         <Border x:Name="StatusPill" CornerRadius="9" Padding="8,3" Background="#11000000" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="Gray" VerticalAlignment="Center" Margin="0,0,5,0" />
-                                <TextBlock x:Name="StatusText" Text="未获取" FontSize="10" FontWeight="Medium" Foreground="#6B6B76" VerticalAlignment="Center" />
+                                <TextBlock x:Name="StatusText" Text="Not fetched" FontSize="10" FontWeight="Medium" Foreground="#6B6B76" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
                         <TextBlock x:Name="TimeText" Text="" FontSize="10" Foreground="#9A9AA6" VerticalAlignment="Center" Margin="8,0,8,0" />
                         <!-- 置顶图钉：细线条轮廓（竖直=已置顶，斜=未置顶，code-behind 切换旋转与颜色） -->
                         <ToggleButton x:Name="PinButton" Width="26" Height="26" IsChecked="True"
                                       Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                      ToolTip="取消置顶" AutomationProperties.Name="置顶窗口" Click="OnPinClick">
+                                      ToolTip="Unpin" AutomationProperties.Name="Pin window" Click="OnPinClick">
                             <Path x:Name="PinPath" Width="14" Height="14" Stretch="Uniform"
                                   Data="M12,2 C10.9,2 10,2.9 10,4 L10,8.5 L7.5,11 L7.5,12.2 L10,12.2 L10,18.5 L11.2,20.8 L12.8,20.8 L14,18.5 L14,12.2 L16.5,12.2 L16.5,11 L14,8.5 L14,4 C14,2.9 13.1,2 12,2 Z"
                                   Stroke="#4D6BFE" StrokeThickness="1.4" Fill="Transparent"
@@ -174,7 +174,7 @@
                         </ToggleButton>
                         <!-- 关闭：✕ 矢量 -->
                         <Button x:Name="CloseButton" Width="26" Height="26" Background="Transparent" BorderThickness="0"
-                                Cursor="Hand" ToolTip="隐藏" AutomationProperties.Name="隐藏" Margin="2,0,0,0" Click="OnCloseClick">
+                                Cursor="Hand" ToolTip="Hide" AutomationProperties.Name="Hide" Margin="2,0,0,0" Click="OnCloseClick">
                             <Path Width="12" Height="12" Stretch="Uniform" Stroke="#6B6B76" StrokeThickness="1.5"
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                   Data="M1,1 L11,11 M11,1 L1,11" />
@@ -189,9 +189,9 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="总余额" FontSize="11" Foreground="#6B6B76" />
+                        <TextBlock Text="Total balance" FontSize="11" Foreground="#6B6B76" />
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="BalanceCurrencyText" Text="¥" FontSize="16" FontWeight="Medium"
+                            <TextBlock x:Name="BalanceCurrencyText" Text="" FontSize="16" FontWeight="Medium"
                                        Foreground="#6B6B76" VerticalAlignment="Bottom" Margin="0,0,3,6" />
                             <TextBlock x:Name="BalanceValueText" Text="—" FontSize="30" FontWeight="Bold"
                                        Foreground="#1A1A20" />
@@ -199,9 +199,9 @@
                         <TextBlock x:Name="CurrencyCodeText" Text="" FontSize="10" Foreground="#9A9AA6" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
-                        <TextBlock x:Name="GrantedText" Text="赠送 —" FontSize="11" FontWeight="Medium"
+                        <TextBlock x:Name="GrantedText" Text="Granted —" FontSize="11" FontWeight="Medium"
                                    Foreground="#3A3A42" HorizontalAlignment="Right" />
-                        <TextBlock x:Name="ToppedUpText" Text="充值 —" FontSize="11" FontWeight="Medium"
+                        <TextBlock x:Name="ToppedUpText" Text="Topped up —" FontSize="11" FontWeight="Medium"
                                    Foreground="#3A3A42" HorizontalAlignment="Right" Margin="0,6,0,0" />
                     </StackPanel>
                 </Grid>
@@ -211,8 +211,8 @@
                     <StackPanel>
                         <StackPanel x:Name="UsageContent">
                             <Grid>
-                                <TextBlock x:Name="MonthTitleText" Text="本月用量" FontSize="11" Foreground="#6B6B76" />
-                                <TextBlock x:Name="TotalCostText" Text="累计 ¥0.00" FontSize="11" FontWeight="SemiBold"
+                                <TextBlock x:Name="MonthTitleText" Text="This month's usage" FontSize="11" Foreground="#6B6B76" />
+                                <TextBlock x:Name="TotalCostText" Text="Total —" FontSize="11" FontWeight="SemiBold"
                                            Foreground="#3A3A42" HorizontalAlignment="Right" />
                             </Grid>
                             <Grid Margin="0,10,0,0">
@@ -222,17 +222,17 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="今日费用" FontSize="10" Foreground="#9A9AA6" />
+                                    <TextBlock Text="Today's cost" FontSize="10" Foreground="#9A9AA6" />
                                     <TextBlock x:Name="TodayCostText" Text="—" FontSize="12" FontWeight="Medium"
                                                Foreground="#1A1A20" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="今日请求" FontSize="10" Foreground="#9A9AA6" />
+                                    <TextBlock Text="Today's requests" FontSize="10" Foreground="#9A9AA6" />
                                     <TextBlock x:Name="TodayRequestsText" Text="—" FontSize="12" FontWeight="Medium"
                                                Foreground="#1A1A20" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="今日输出" FontSize="10" Foreground="#9A9AA6" />
+                                    <TextBlock Text="Today's output" FontSize="10" Foreground="#9A9AA6" />
                                     <TextBlock x:Name="TodayOutputText" Text="—" FontSize="12" FontWeight="Medium"
                                                Foreground="#1A1A20" Margin="0,2,0,0" />
                                 </StackPanel>
@@ -244,17 +244,17 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="本月请求" FontSize="10" Foreground="#9A9AA6" />
+                                    <TextBlock Text="Month requests" FontSize="10" Foreground="#9A9AA6" />
                                     <TextBlock x:Name="MonthRequestsText" Text="—" FontSize="12" FontWeight="Medium"
                                                Foreground="#1A1A20" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="本月输出" FontSize="10" Foreground="#9A9AA6" />
+                                    <TextBlock Text="Month output" FontSize="10" Foreground="#9A9AA6" />
                                     <TextBlock x:Name="MonthOutputText" Text="—" FontSize="12" FontWeight="Medium"
                                                Foreground="#1A1A20" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="缓存命中" FontSize="10" Foreground="#9A9AA6" />
+                                    <TextBlock Text="Cache hit" FontSize="10" Foreground="#9A9AA6" />
                                     <TextBlock x:Name="CacheHitText" Text="—" FontSize="12" FontWeight="Medium"
                                                Foreground="#1A1A20" Margin="0,2,0,0" />
                                 </StackPanel>
@@ -280,20 +280,20 @@
                         <!-- 加载中 -->
                         <StackPanel x:Name="LoadingPanel" Visibility="Collapsed" Orientation="Horizontal">
                             <ProgressBar Width="70" Height="6" IsIndeterminate="True" VerticalAlignment="Center" />
-                            <TextBlock Text="加载用量…" FontSize="11" Foreground="#9A9AA6" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Loading usage…" FontSize="11" Foreground="#9A9AA6" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
 
                         <!-- 登录引导 -->
                         <StackPanel x:Name="LoginPromptPanel" Visibility="Collapsed">
-                            <TextBlock Text="登录后显示余额与用量明细" FontSize="11" Foreground="#6B6B76" />
-                            <Button x:Name="LoginPromptButton" Content="一键登录 →" Style="{StaticResource PrimaryButton}"
+                            <TextBlock Text="Sign in to see your balance and usage details" FontSize="11" Foreground="#6B6B76" TextWrapping="Wrap" />
+                            <Button x:Name="LoginPromptButton" Content="One-click login →" Style="{StaticResource PrimaryButton}"
                                     HorizontalAlignment="Left" Margin="0,10,0,0" Click="OnLoginPromptClick" />
                         </StackPanel>
 
                         <!-- 过期/错误提示 -->
                         <StackPanel x:Name="ExpiredPanel" Visibility="Collapsed">
-                            <TextBlock x:Name="ExpiredText" Text="平台登录已过期，请重新登录" FontSize="11" Foreground="#6B6B76" TextWrapping="Wrap" />
-                            <Button x:Name="ReLoginButton" Content="重新登录 ↻" Style="{StaticResource SecondaryButton}"
+                            <TextBlock x:Name="ExpiredText" Text="Platform sign-in has expired - please sign in again" FontSize="11" Foreground="#6B6B76" TextWrapping="Wrap" />
+                            <Button x:Name="ReLoginButton" Content="Sign in again ↻" Style="{StaticResource SecondaryButton}"
                                     HorizontalAlignment="Left" Margin="0,10,0,0" Click="OnLoginPromptClick" />
                         </StackPanel>
                     </StackPanel>
@@ -303,25 +303,25 @@
                 <Border x:Name="TrendSection" Background="#F1F1F5" CornerRadius="10" Padding="12" Margin="0,10,0,0">
                     <StackPanel>
                         <Grid>
-                            <TextBlock Text="Token 用量趋势" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
+                            <TextBlock Text="Token trend" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
                             <Border HorizontalAlignment="Right" Background="#E6E6EC" CornerRadius="7" Padding="2">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="TrendOutput" Content="输出" GroupName="Trend" Style="{StaticResource SegButton}"
-                                                 ToolTip="模型生成的输出 Token" Checked="OnTrendChanged" />
-                                    <RadioButton x:Name="TrendCacheHit" Content="缓存命中" GroupName="Trend" Style="{StaticResource SegButton}"
-                                                 ToolTip="从缓存直接复用的输入 Token" Checked="OnTrendChanged" />
-                                    <RadioButton x:Name="TrendTotal" Content="总量" GroupName="Trend" Style="{StaticResource SegButton}"
-                                                 ToolTip="输出 + 缓存命中 + 缓存未命中 Token" Checked="OnTrendChanged" />
+                                    <RadioButton x:Name="TrendOutput" Content="Output" GroupName="Trend" Style="{StaticResource SegButton}"
+                                                 ToolTip="Model-generated output tokens" Checked="OnTrendChanged" />
+                                    <RadioButton x:Name="TrendCacheHit" Content="Cache hit" GroupName="Trend" Style="{StaticResource SegButton}"
+                                                 ToolTip="Input tokens reused directly from cache" Checked="OnTrendChanged" />
+                                    <RadioButton x:Name="TrendTotal" Content="Total" GroupName="Trend" Style="{StaticResource SegButton}"
+                                                 ToolTip="Output + cache-hit + cache-miss tokens" Checked="OnTrendChanged" />
                                 </StackPanel>
                             </Border>
                         </Grid>
                         <local:SparklineControl x:Name="TrendChart" Height="46" Margin="0,10,0,0" />
                         <Grid Margin="0,8,0,0">
-                            <TextBlock x:Name="TrendTodayText" Text="今日 —" FontSize="10" Foreground="#6B6B76" />
+                            <TextBlock x:Name="TrendTodayText" Text="Today —" FontSize="10" Foreground="#6B6B76" />
                             <TextBlock x:Name="TrendPeakText" Text="" FontSize="10" Foreground="#6B6B76" HorizontalAlignment="Right" />
                         </Grid>
-                        <TextBlock Text="单位：Token；1万 = 10,000 Token" FontSize="9" Foreground="#9A9AA6" Margin="0,6,0,0" />
-                        <TextBlock x:Name="TrendEmptyText" Text="登录后查看 Token 用量趋势" FontSize="10" Foreground="#9A9AA6"
+                        <TextBlock Text="Units: tokens · K = 1,000 · M = 1,000,000" FontSize="9" Foreground="#9A9AA6" Margin="0,6,0,0" />
+                        <TextBlock x:Name="TrendEmptyText" Text="Sign in to see your token trend" FontSize="10" Foreground="#9A9AA6"
                                    Margin="0,8,0,0" Visibility="Collapsed" />
                     </StackPanel>
                 </Border>
@@ -337,34 +337,34 @@
                         <!-- 平台账号 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="64" />
+                                <ColumnDefinition Width="96" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="平台账号" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="0" Text="Account" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                                <TextBlock x:Name="AccountStatusText" Text="未登录" FontSize="11" Foreground="#6B6B76" />
+                                <TextBlock x:Name="AccountStatusText" Text="Not signed in" FontSize="11" Foreground="#6B6B76" />
                                 <TextBlock x:Name="AccountNameText" Text="" FontSize="10" Foreground="#9A9AA6" Margin="6,0,0,0"
                                            TextTrimming="CharacterEllipsis" MaxWidth="120" />
                             </StackPanel>
-                            <Button x:Name="LoginButton" Grid.Column="2" Content="登录" Style="{StaticResource SecondaryButton}"
+                            <Button x:Name="LoginButton" Grid.Column="2" Content="Log in" Style="{StaticResource SecondaryButton}"
                                     Padding="10,4" Click="OnLoginPromptClick" />
                         </Grid>
 
                         <!-- 刷新间隔 -->
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="64" />
+                                <ColumnDefinition Width="96" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="刷新间隔" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="0" Text="Refresh interval" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
                             <Border Grid.Column="1" HorizontalAlignment="Left" Background="#E6E6EC" CornerRadius="7" Padding="2">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="Interval15" Content="15秒" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
-                                    <RadioButton x:Name="Interval30" Content="30秒" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
-                                    <RadioButton x:Name="Interval60" Content="1分" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
-                                    <RadioButton x:Name="Interval300" Content="5分" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
-                                    <RadioButton x:Name="Interval600" Content="10分" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
+                                    <RadioButton x:Name="Interval15" Content="15s" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
+                                    <RadioButton x:Name="Interval30" Content="30s" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
+                                    <RadioButton x:Name="Interval60" Content="1m" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
+                                    <RadioButton x:Name="Interval300" Content="5m" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
+                                    <RadioButton x:Name="Interval600" Content="10m" GroupName="Interval" Style="{StaticResource SegButton}" Checked="OnIntervalChanged" />
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -372,11 +372,11 @@
                         <!-- 开机自启 -->
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="64" />
+                                <ColumnDefinition Width="96" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="开机自启" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
-                            <CheckBox x:Name="LaunchAtLoginBox" Grid.Column="1" Content="登录 Windows 时自动启动"
+                            <TextBlock Grid.Column="0" Text="Launch at login" FontSize="11" Foreground="#6B6B76" VerticalAlignment="Center" />
+                            <CheckBox x:Name="LaunchAtLoginBox" Grid.Column="1" Content="Start automatically when you sign in to Windows"
                                       FontSize="11" Foreground="#3A3A42" VerticalAlignment="Center" VerticalContentAlignment="Center"
                                       Checked="OnLaunchAtLoginChanged" Unchecked="OnLaunchAtLoginChanged" />
                         </Grid>
@@ -386,11 +386,11 @@
                 <!-- MARK: 底部 -->
                 <Grid Margin="0,14,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="RefreshButton" Content="刷新" Style="{StaticResource SecondaryButton}" Click="OnRefreshClick" />
-                        <Button x:Name="LogoutButton" Content="退出登录" FontSize="11" Padding="8,5" Background="Transparent"
+                        <Button x:Name="RefreshButton" Content="Refresh" Style="{StaticResource SecondaryButton}" Click="OnRefreshClick" />
+                        <Button x:Name="LogoutButton" Content="Sign out" FontSize="11" Padding="8,5" Background="Transparent"
                                 BorderThickness="0" Foreground="#9A9AA6" Cursor="Hand" Click="OnLogoutClick" Margin="10,0,0,0" />
                     </StackPanel>
-                    <Button Content="退出" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" Click="OnQuitClick" />
+                    <Button Content="Quit" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" Click="OnQuitClick" />
                 </Grid>
 
             </StackPanel>

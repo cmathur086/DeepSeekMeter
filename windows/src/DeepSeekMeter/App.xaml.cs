@@ -148,7 +148,8 @@ public partial class App : System.Windows.Application
         try
         {
             MessageBox.Show(
-                "开机自启设置失败，已还原。可能没有写入注册表的权限。",
+                "Failed to change the launch-at-login setting; it has been reverted. "
+                    + "You may not have permission to write to the registry.",
                 "DeepSeek Meter",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);

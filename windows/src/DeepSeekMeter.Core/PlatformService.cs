@@ -33,23 +33,23 @@ public sealed class PlatformException : Exception
     /// <summary>平台 Token 无效或已过期（40002 / 40003）。</summary>
     public bool IsTokenExpired => ApiCode is 40002 or 40003;
 
-    /// <summary>根据错误类型构造中文提示（对齐 Swift PlatformError.message）。</summary>
+    /// <summary>根据错误类型构造提示文案（对齐 Swift PlatformError.message）。</summary>
     public static string BuildMessage(PlatformErrorKind kind, string detail, int? httpCode = null, int? apiCode = null)
     {
         switch (kind)
         {
             case PlatformErrorKind.EmptyToken:
-                return "请先在设置中填写平台 Token";
+                return "Please enter your platform token in settings first";
             case PlatformErrorKind.Network:
-                return $"用量获取失败：{detail}";
+                return $"Usage fetch failed: {detail}";
             case PlatformErrorKind.Http:
-                return $"用量获取失败（HTTP {httpCode}）";
+                return $"Usage fetch failed (HTTP {httpCode})";
             case PlatformErrorKind.Api:
                 if (apiCode is 40002 or 40003)
-                    return "平台 Token 无效或已过期，请重新获取";
-                return $"平台接口错误（{apiCode}）：{detail}";
+                    return "Platform token is invalid or expired - please sign in again";
+                return $"Platform API error ({apiCode}): {detail}";
             case PlatformErrorKind.Decoding:
-                return $"用量解析失败：{detail}";
+                return $"Failed to parse usage data: {detail}";
             default:
                 return detail;
         }
@@ -108,11 +108,11 @@ public sealed class PlatformService
         var response = await GetAsync<CurrentUserResponse>("/auth-api/v0/users/current", token, ct);
         EnsureSuccess(response.Code, response.Msg);
         if (response.Data is null)
-            throw PlatformException.Api(response.Code, "用户信息为空");
+            throw PlatformException.Api(response.Code, "User info is empty");
         EnsureBizSuccess(response.Data.BizCode, response.Data.BizMsg);
         var user = response.Data.BizData;
         if (user is null || string.IsNullOrEmpty(user.Id))
-            throw PlatformException.Api(response.Code, "用户信息为空");
+            throw PlatformException.Api(response.Code, "User info is empty");
         return new UserInfo(user.Email ?? "", user.Currency ?? "CNY");
     }
 
@@ -122,10 +122,10 @@ public sealed class PlatformService
         var response = await GetAsync<SummaryResponse>("/api/v0/users/get_user_summary", token, ct);
         EnsureSuccess(response.Code, response.Msg);
         if (response.Data is null)
-            throw PlatformException.Api(response.Code, "summary 为空");
+            throw PlatformException.Api(response.Code, "summary is empty");
         EnsureBizSuccess(response.Data.BizCode, response.Data.BizMsg);
         return response.Data.BizData
-            ?? throw PlatformException.Api(response.Code, "summary 为空");
+            ?? throw PlatformException.Api(response.Code, "summary is empty");
     }
 
     /// <summary>按 API Key 的 token 用量（实时；start/end 为 Unix 秒，tz 为秒偏移，bucket=86400 按天分桶）。
@@ -135,10 +135,10 @@ public sealed class PlatformService
         var response = await GetAsync<ApiKeyAmountResponse>($"/api/v0/usage/by_api_key/amount?start={start}&end={end}&tz={tz}&bucket=86400", token, ct);
         EnsureSuccess(response.Code, response.Msg);
         if (response.Data is null)
-            throw PlatformException.Api(response.Code, "by_api_key amount 为空");
+            throw PlatformException.Api(response.Code, "by_api_key amount is empty");
         EnsureBizSuccess(response.Data.BizCode, response.Data.BizMsg);
         return response.Data.BizData
-            ?? throw PlatformException.Api(response.Code, "by_api_key amount 为空");
+            ?? throw PlatformException.Api(response.Code, "by_api_key amount is empty");
     }
 
     /// <summary>按 API Key 的费用（实时；start/end 为 Unix 秒，tz 为秒偏移，bucket=86400 按天分桶）。</summary>
@@ -147,10 +147,10 @@ public sealed class PlatformService
         var response = await GetAsync<ApiKeyCostResponse>($"/api/v0/usage/by_api_key/cost?start={start}&end={end}&tz={tz}&bucket=86400", token, ct);
         EnsureSuccess(response.Code, response.Msg);
         if (response.Data is null)
-            throw PlatformException.Api(response.Code, "by_api_key cost 为空");
+            throw PlatformException.Api(response.Code, "by_api_key cost is empty");
         EnsureBizSuccess(response.Data.BizCode, response.Data.BizMsg);
         return response.Data.BizData
-            ?? throw PlatformException.Api(response.Code, "by_api_key cost 为空");
+            ?? throw PlatformException.Api(response.Code, "by_api_key cost is empty");
     }
 
     // MARK: - 请求
@@ -172,7 +172,7 @@ public sealed class PlatformService
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            throw PlatformException.Network("请求超时");
+            throw PlatformException.Network("Request timed out");
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
@@ -188,7 +188,7 @@ public sealed class PlatformService
             try
             {
                 return JsonSerializer.Deserialize<T>(json, Json.Options)
-                    ?? throw PlatformException.Decoding("响应为空");
+                    ?? throw PlatformException.Decoding("Response is empty");
             }
             catch (JsonException ex)
             {

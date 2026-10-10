@@ -193,7 +193,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 // 接口成功但钱包列表为空：识别为明确空状态，不保留旧余额
                 LastBalance = null;
-                LastError = "余额数据为空";
+                LastError = "Balance data is empty";
                 return;
             }
             var bonus = summary.BonusWallets.FirstOrDefault()?.Value ?? 0;
@@ -323,7 +323,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // 先清除设置文件中的加密字段（成功才清内存，失败保留一致登录状态）
         if (!Settings.TryClearPlatformCredentials(out var clearError))
         {
-            LastError = "本地登录信息清除失败";
+            LastError = "Failed to clear stored sign-in";
             return;
         }
         // 设置文件清除成功后，再清理 WebView2 网页登录数据
@@ -335,7 +335,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Currency = "CNY";
         LastError = webDataCleared
             ? null
-            : "应用 Token 已清除，但网页登录数据清理失败";
+            : "Token cleared, but web sign-in data could not be removed";
     }
 
     // MARK: - INotifyPropertyChanged

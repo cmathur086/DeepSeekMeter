@@ -217,8 +217,8 @@ finally
 // 7. 格式化工具
 Check(Formatting.Format(311932800.0) == "311932800.0", "大数格式化");
 Check(Formatting.CountString(1130) == "1,130", "千分位");
-Check(Formatting.TokenString(123456789) == "1.23亿", "Token 亿单位");
-Check(Formatting.TokenString(23456) == "2.3万", "Token 万单位");
+Check(Formatting.TokenString(123456789) == "123.46M", "Token 亿单位");
+Check(Formatting.TokenString(23456) == "23.5K", "Token 万单位");
 Check(Formatting.ModelDisplayName("deepseek-v4-pro") == "v4-pro", "模型显示名");
 
 // 8. 数据可信度状态（旧数据掩盖错误的判定）
@@ -236,7 +236,7 @@ Check(Formatting.CurrencySymbol("USD") == "$", "USD -> $");
 Check(Formatting.CurrencySymbol("EUR") == "€", "EUR -> €");
 Check(Formatting.CurrencySymbol("CNY") == "¥", "CNY -> ¥");
 Check(Formatting.Format(12.5) == "12.50", "USD 金额格式化");
-Check($"累计 {Formatting.CurrencySymbol("USD")}{Formatting.Format(12.5)}" == "累计 $12.50", "USD 费用文案");
+Check($"Total {Formatting.CurrencySymbol("USD")}{Formatting.Format(12.5)}" == "Total $12.50", "USD 费用文案");
 
 // 10. 空 data / 空 biz_data / 非法刷新间隔 / 设置保存失败
 var emptyDataResp = JsonSerializer.Deserialize<PlatformEnvelope<BizWrapper<UsageData>>>(
@@ -303,23 +303,23 @@ Check(sorted[0].Date == "2026-08-01" && sorted[1].Date == "2026-08-03", "日期�
 
 // 12. Token 显示单位（紧凑格式 + 完整千分位）
 Check(Formatting.TokenString(0) == "0", "TokenString(0) 显示 0");
-Check(Formatting.TokenString(5000) == "5000.0", "TokenString 小于 1 万（千位 1 位小数）");
+Check(Formatting.TokenString(5000) == "5.0K", "TokenString 小于 1 万（千位 1 位小数）");
 Check(Formatting.TokenString(500) == "500.00", "TokenString 小于 1 千（两位小数）");
-Check(Formatting.TokenString(14000) == "1.4万", "TokenString 1.4万");
-Check(Formatting.TokenString(350000000) == "3.50亿", "TokenString 3.50亿");
+Check(Formatting.TokenString(14000) == "14.0K", "TokenString 1.4万");
+Check(Formatting.TokenString(350000000) == "350.00M", "TokenString 3.50亿");
 Check(Formatting.TokenFullString(84217000) == "84,217,000", "TokenFullString 完整千分位");
 Check(Formatting.TokenFullString(0) == "0", "TokenFullString(0) 为 0");
-Check($"今日 {Formatting.TokenString(14000)} Token" == "今日 1.4万 Token", "今日 Token 文案");
-Check($"峰值 {Formatting.TokenString(288000)} Token" == "峰值 28.8万 Token", "峰值 Token 文案");
+Check($"Today {Formatting.TokenString(14000)} tokens" == "Today 14.0K tokens", "今日 Token 文案");
+Check($"Peak {Formatting.TokenString(288000)} tokens" == "Peak 288.0K tokens", "峰值 Token 文案");
 Check($"84,217,000 Token" == $"{Formatting.TokenFullString(84217000)} Token", "悬停详情完整数值文案");
 
 // 13. 趋势指标名称映射（输出/缓存命中/总量）
-Check(TrendMetric.Output.Label() == "输出", "指标名 输出");
-Check(TrendMetric.CacheHit.Label() == "缓存命中", "指标名 缓存命中");
-Check(TrendMetric.Total.Label() == "总量", "指标名 总量");
-Check(TrendMetric.Output.Description() == "模型生成的输出 Token", "指标说明 输出");
-Check(TrendMetric.CacheHit.Description() == "从缓存直接复用的输入 Token", "指标说明 缓存命中");
-Check(TrendMetric.Total.Description() == "输出 + 缓存命中 + 缓存未命中 Token", "指标说明 总量");
+Check(TrendMetric.Output.Label() == "Output", "指标名 输出");
+Check(TrendMetric.CacheHit.Label() == "Cache hit", "指标名 缓存命中");
+Check(TrendMetric.Total.Label() == "Total", "指标名 总量");
+Check(TrendMetric.Output.Description() == "Model-generated output tokens", "指标说明 输出");
+Check(TrendMetric.CacheHit.Description() == "Input tokens reused directly from cache", "指标说明 缓存命中");
+Check(TrendMetric.Total.Description() == "Output + cache-hit + cache-miss tokens", "指标说明 总量");
 
 // 14. Token DPAPI 加密往返与设置文件不落明文
 var encToken = "test-token-value-123";

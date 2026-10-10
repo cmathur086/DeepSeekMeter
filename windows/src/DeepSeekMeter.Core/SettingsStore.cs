@@ -64,7 +64,7 @@ public sealed class SettingsStore : INotifyPropertyChanged
             else
             {
                 _refreshInterval = previous; // 保存失败回滚，不假装成功
-                SaveFailed?.Invoke(error ?? "设置保存失败");
+                SaveFailed?.Invoke(error ?? "Failed to save settings");
             }
         }
     }
@@ -84,7 +84,7 @@ public sealed class SettingsStore : INotifyPropertyChanged
             else
             {
                 _launchAtLogin = previous;
-                SaveFailed?.Invoke(error ?? "设置保存失败");
+                SaveFailed?.Invoke(error ?? "Failed to save settings");
             }
         }
     }
@@ -117,7 +117,7 @@ public sealed class SettingsStore : INotifyPropertyChanged
         return true;
     }
 
-    /// <summary>设置保存失败时触发（参数为脱敏中文提示）。</summary>
+    /// <summary>设置保存失败时触发（参数为脱敏提示）。</summary>
     public event Action<string>? SaveFailed;
 
     // MARK: - 持久化
@@ -154,7 +154,7 @@ public sealed class SettingsStore : INotifyPropertyChanged
                 if (token is null)
                 {
                     _platformToken = "";
-                    StartupWarning = "本地登录信息无法解密，请重新登录";
+                    StartupWarning = "Stored sign-in could not be decrypted. Please sign in again.";
                 }
                 else
                 {
@@ -171,7 +171,7 @@ public sealed class SettingsStore : INotifyPropertyChanged
                 else
                 {
                     _platformToken = "";
-                    StartupWarning = "本地登录信息迁移失败，请重新登录";
+                    StartupWarning = "Stored sign-in could not be migrated. Please sign in again.";
                 }
             }
         }
@@ -198,7 +198,7 @@ public sealed class SettingsStore : INotifyPropertyChanged
             }
             catch
             {
-                error = "本地登录信息加密失败，请重试";
+                error = "Failed to encrypt your sign-in. Please try again.";
                 return false;
             }
         }
@@ -222,7 +222,7 @@ public sealed class SettingsStore : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            error = "设置保存失败，请检查磁盘空间或文件权限";
+            error = "Failed to save settings. Check disk space or file permissions.";
             // 只记录不含 Token、不含路径敏感信息的可读错误
             System.Diagnostics.Debug.WriteLine($"[DeepSeekMeter] 设置保存失败：{ex.Message}");
             return false;

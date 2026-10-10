@@ -40,7 +40,7 @@ public partial class TokenInputDialog : Window
         var token = (ShowTokenBox.IsChecked == true ? TokenVisibleBox.Text : TokenBox.Password).Trim();
         if (token.Length == 0)
         {
-            HintText.Text = "Token 不能为空";
+            HintText.Text = "Token cannot be empty";
             return;
         }
         _onToken(token);

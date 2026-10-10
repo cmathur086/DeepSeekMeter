@@ -30,12 +30,13 @@ public static class Formatting
         }
     }
 
-    /// <summary>Token 数量展示（紧凑）：亿 / 万 / 原样；0 显示 "0"。</summary>
+    /// <summary>Token 数量展示（紧凑）：B / M / K / 原样；0 显示 "0"。</summary>
     public static string TokenString(double n)
     {
         if (n == 0) return "0";
-        if (n >= 1e8) return string.Format(CultureInfo.InvariantCulture, "{0:0.00}亿", n / 1e8);
-        if (n >= 1e4) return string.Format(CultureInfo.InvariantCulture, "{0:0.0}万", n / 1e4);
+        if (n >= 1e9) return string.Format(CultureInfo.InvariantCulture, "{0:0.00}B", n / 1e9);
+        if (n >= 1e6) return string.Format(CultureInfo.InvariantCulture, "{0:0.00}M", n / 1e6);
+        if (n >= 1e3) return string.Format(CultureInfo.InvariantCulture, "{0:0.0}K", n / 1e3);
         return Format(n);
     }
 

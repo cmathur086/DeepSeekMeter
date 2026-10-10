@@ -165,8 +165,8 @@ public partial class PopoverWindow : Window
             PinRotate.Angle = 0;
             PinPath.Stroke = new SolidColorBrush(Color.FromRgb(77, 107, 254));
             PinButton.Background = new SolidColorBrush(Color.FromArgb(26, 77, 107, 254));
-            PinButton.ToolTip = "取消置顶";
-            PinButton.SetValue(AutomationProperties.NameProperty, "取消置顶");
+            PinButton.ToolTip = "Unpin";
+            PinButton.SetValue(AutomationProperties.NameProperty, "Unpin");
         }
         else
         {
@@ -174,8 +174,8 @@ public partial class PopoverWindow : Window
             PinRotate.Angle = 45;
             PinPath.Stroke = new SolidColorBrush(Color.FromRgb(107, 107, 118));
             PinButton.Background = Brushes.Transparent;
-            PinButton.ToolTip = "置顶窗口";
-            PinButton.SetValue(AutomationProperties.NameProperty, "置顶窗口");
+            PinButton.ToolTip = "Pin window";
+            PinButton.SetValue(AutomationProperties.NameProperty, "Pin window");
         }
     }
 
@@ -224,28 +224,28 @@ public partial class PopoverWindow : Window
         switch (_model.Status)
         {
             case DataStatus.Fresh:
-                SetStatus("可用", Color.FromRgb(46, 160, 67));
+                SetStatus("Live", Color.FromRgb(46, 160, 67));
                 break;
             case DataStatus.Stale:
-                SetStatus("数据可能过期", Color.FromRgb(240, 158, 36));
+                SetStatus("May be stale", Color.FromRgb(240, 158, 36));
                 break;
             case DataStatus.Error:
-                SetStatus("异常", Color.FromRgb(229, 72, 77));
+                SetStatus("Error", Color.FromRgb(229, 72, 77));
                 break;
             case DataStatus.TokenExpired:
-                SetStatus("已过期", Color.FromRgb(229, 72, 77));
+                SetStatus("Expired", Color.FromRgb(229, 72, 77));
                 break;
             case DataStatus.Loading:
-                SetStatus("加载中", Color.FromRgb(136, 136, 136));
+                SetStatus("Loading", Color.FromRgb(136, 136, 136));
                 break;
             default: // NotLoggedIn
-                SetStatus("未登录", Color.FromRgb(136, 136, 136));
+                SetStatus("Not signed in", Color.FromRgb(136, 136, 136));
                 break;
         }
 
         // Stale 时明确标注「最后成功时间」
         TimeText.Text = _model.LastUpdate is { } t
-            ? (_model.Status == DataStatus.Stale ? $"最后成功 {t:HH:mm:ss}" : t.ToString("HH:mm:ss"))
+            ? (_model.Status == DataStatus.Stale ? $"Last success {t:HH:mm:ss}" : t.ToString("HH:mm:ss"))
             : "";
     }
 
@@ -264,17 +264,17 @@ public partial class PopoverWindow : Window
         {
             BalanceCurrencyText.Text = Formatting.CurrencySymbol(balance.Currency);
             BalanceValueText.Text = Formatting.Format(balance.Total);
-            CurrencyCodeText.Text = $"币种：{balance.Currency}";
-            GrantedText.Text = $"赠送 {Formatting.CurrencySymbol(balance.Currency)}{Formatting.Format(balance.Granted)}";
-            ToppedUpText.Text = $"充值 {Formatting.CurrencySymbol(balance.Currency)}{Formatting.Format(balance.ToppedUp)}";
+            CurrencyCodeText.Text = $"Currency: {balance.Currency}";
+            GrantedText.Text = $"Granted {Formatting.CurrencySymbol(balance.Currency)}{Formatting.Format(balance.Granted)}";
+            ToppedUpText.Text = $"Topped up {Formatting.CurrencySymbol(balance.Currency)}{Formatting.Format(balance.ToppedUp)}";
         }
         else
         {
-            BalanceCurrencyText.Text = "¥";
+            BalanceCurrencyText.Text = "";
             BalanceValueText.Text = "—";
             CurrencyCodeText.Text = "";
-            GrantedText.Text = "赠送 —";
-            ToppedUpText.Text = "充值 —";
+            GrantedText.Text = "Granted —";
+            ToppedUpText.Text = "Topped up —";
         }
     }
 
@@ -292,7 +292,7 @@ public partial class PopoverWindow : Window
             LoadingPanel.Visibility = Visibility.Collapsed;
             LoginPromptPanel.Visibility = Visibility.Collapsed;
             ExpiredPanel.Visibility = Visibility.Visible;
-            ExpiredText.Text = "平台登录已过期，请重新登录";
+            ExpiredText.Text = "Platform sign-in has expired - please sign in again";
             return;
         }
 
@@ -303,8 +303,8 @@ public partial class PopoverWindow : Window
             LoginPromptPanel.Visibility = Visibility.Collapsed;
             ExpiredPanel.Visibility = Visibility.Collapsed;
 
-            MonthTitleText.Text = $"{usage.Year}年{usage.Month}月用量";
-            TotalCostText.Text = $"累计 {symbol}{Formatting.Format(usage.TotalCost)}";
+            MonthTitleText.Text = $"{usage.Year}-{usage.Month:D2} usage";
+            TotalCostText.Text = $"Total {symbol}{Formatting.Format(usage.TotalCost)}";
 
             var today = DateTime.Now;
             var todayTokens = usage.TokensOn(today);
@@ -325,7 +325,7 @@ public partial class PopoverWindow : Window
                         .Usage.Sum(i => i.Value) ?? 0;
                     return new ModelRow(
                         Formatting.ModelDisplayName(m.Model),
-                        $"{Formatting.CountString(m.Requests)} 次 · {symbol}{Formatting.Format(cost)}");
+                        $"{Formatting.CountString(m.Requests)} requests · {symbol}{Formatting.Format(cost)}");
                 })
                 .ToList();
             ModelList.ItemsSource = rows;
@@ -365,7 +365,7 @@ public partial class PopoverWindow : Window
         if (usage is null)
         {
             TrendChart.Entries = [];
-            TrendTodayText.Text = "今日 —";
+            TrendTodayText.Text = "Today —";
             TrendPeakText.Text = "";
             if (_model.UsageError is null && !_model.IsFetching)
                 TrendEmptyText.Visibility = Visibility.Visible;
@@ -376,7 +376,7 @@ public partial class PopoverWindow : Window
         if (usage.AmountDays.Count == 0)
         {
             TrendChart.Entries = [];
-            TrendTodayText.Text = "今日 —";
+            TrendTodayText.Text = "Today —";
             TrendPeakText.Text = "";
             TrendEmptyText.Visibility = Visibility.Visible;
             return;
@@ -397,12 +397,12 @@ public partial class PopoverWindow : Window
 
         var today = DateTime.Now;
         var todayDay = usage.AmountDays.FirstOrDefault(d => d.Date == today.ToString("yyyy-MM-dd"));
-        TrendTodayText.Text = $"今日 {Formatting.TokenString(todayDay is null ? 0 : DailyValue(todayDay))} Token";
+        TrendTodayText.Text = $"Today {Formatting.TokenString(todayDay is null ? 0 : DailyValue(todayDay))} tokens";
 
         if (entries.Count > 0)
         {
             var peak = entries.MaxBy(e => e.Value)!;
-            TrendPeakText.Text = $"峰值 {Formatting.TokenString(peak.Value)} Token（{peak.Date.Month}月{peak.Date.Day}日）";
+            TrendPeakText.Text = $"Peak {Formatting.TokenString(peak.Value)} tokens ({peak.Date:MMM d})";
         }
         else
         {
@@ -443,20 +443,20 @@ public partial class PopoverWindow : Window
         var loggedIn = !string.IsNullOrEmpty(_model.Settings.PlatformToken);
         if (loggedIn)
         {
-            AccountStatusText.Text = "已登录 ✓";
+            AccountStatusText.Text = "Signed in ✓";
             AccountStatusText.Foreground = new SolidColorBrush(Color.FromRgb(46, 160, 67));
             AccountNameText.Text = _model.Settings.PlatformUserName;
-            LoginButton.Content = "重新登录";
+            LoginButton.Content = "Sign in again";
             LoginButton.Background = Brushes.Transparent;
             LoginButton.BorderBrush = new SolidColorBrush(Color.FromRgb(204, 204, 204));
             LoginButton.Foreground = new SolidColorBrush(Color.FromRgb(51, 51, 51));
         }
         else
         {
-            AccountStatusText.Text = "未登录";
+            AccountStatusText.Text = "Not signed in";
             AccountStatusText.Foreground = new SolidColorBrush(Color.FromRgb(136, 136, 136));
             AccountNameText.Text = "";
-            LoginButton.Content = "登录";
+            LoginButton.Content = "Log in";
             LoginButton.Background = new SolidColorBrush(Color.FromRgb(77, 107, 254));
             LoginButton.BorderBrush = Brushes.Transparent;
             LoginButton.Foreground = Brushes.White;
@@ -465,7 +465,7 @@ public partial class PopoverWindow : Window
 
     private void UpdateFooter()
     {
-        RefreshButton.Content = _model.IsFetching ? "刷新中…" : "刷新";
+        RefreshButton.Content = _model.IsFetching ? "Refreshing…" : "Refresh";
         RefreshButton.IsEnabled = !_model.IsFetching;
         LogoutButton.Visibility = string.IsNullOrEmpty(_model.Settings.PlatformToken)
             ? Visibility.Collapsed

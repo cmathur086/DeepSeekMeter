@@ -25,9 +25,9 @@ public sealed class TrayIconController : IDisposable
         _model = model;
 
         _menu = new System.Windows.Forms.ContextMenuStrip();
-        var openItem = new System.Windows.Forms.ToolStripMenuItem("打开悬浮窗", null, (_, _) => ShowPopover());
-        var refreshItem = new System.Windows.Forms.ToolStripMenuItem("立即刷新", null, async (_, _) => await _model.RefreshAsync());
-        var quitItem = new System.Windows.Forms.ToolStripMenuItem("退出", null, (_, _) => System.Windows.Application.Current.Shutdown());
+        var openItem = new System.Windows.Forms.ToolStripMenuItem("Open panel", null, (_, _) => ShowPopover());
+        var refreshItem = new System.Windows.Forms.ToolStripMenuItem("Refresh now", null, async (_, _) => await _model.RefreshAsync());
+        var quitItem = new System.Windows.Forms.ToolStripMenuItem("Quit", null, (_, _) => System.Windows.Application.Current.Shutdown());
         _menu.Items.Add(openItem);
         _menu.Items.Add(refreshItem);
         _menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
@@ -116,25 +116,25 @@ public sealed class TrayIconController : IDisposable
         switch (model.Status)
         {
             case DataStatus.TokenExpired:
-                return "登录已过期，点击重新登录";
+                return "Sign-in expired - click to sign in again";
             case DataStatus.Error:
-                return model.LastError ?? "获取失败";
+                return model.LastError ?? "Fetch failed";
             case DataStatus.Stale:
             {
-                var stale = model.LastError ?? "数据可能已过期";
+                var stale = model.LastError ?? "Data may be out of date";
                 if (model.LastUpdate is { } t)
-                    stale += $" · 最后成功 {t:HH:mm:ss}";
+                    stale += $" · last success {t:HH:mm:ss}";
                 return stale.Length > 63 ? stale[..63] : stale;
             }
         }
         if (model.LastBalance is { } balance)
         {
-            var line = $"余额 {Formatting.CurrencySymbol(balance.Currency)}{Formatting.Format(balance.Total)}";
+            var line = $"Balance {Formatting.CurrencySymbol(balance.Currency)}{Formatting.Format(balance.Total)}";
             if (model.LastUpdate is { } t)
-                line += $" · 最后更新 {t:HH:mm:ss}";
+                line += $" · updated {t:HH:mm:ss}";
             return line.Length > 63 ? line[..63] : line;
         }
-        return "DeepSeek Meter · 未登录";
+        return "DeepSeek Meter · not signed in";
     }
 
     /// <summary>按状态颜色缓存托盘图标（鲸鱼娘 + 右下角状态点），避免每次刷新重复创建。</summary>
